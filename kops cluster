@@ -120,8 +120,7 @@ ssh-keygen
 ** Setup Kubernetes on AWS using KOPS :-
 ---------------------------------------
 
-kops create cluster --cloud=aws --zones=us-east-1a --name=k8.onthecloud.ga --dns-zone=k8.onthecloud.ga --dns public
-
+kops create cluster --cloud=aws --zones=us-east-1a --networking calico --master-size t3.medium --master-count 1 --node-size t3.medium --node-count 1 --name=kops8.onthecloud.ga --dns-zone=kops8.onthecloud.ga --sh-public-key .ssh/id_rsa.pub --dns public 
 kops update cluster k8.onthecloud.ga--yes --admin
 
 kops validate cluster
