@@ -1,0 +1,7 @@
+=====================
+KUBERNETES SERVICES :-
+=====================
+services helps us to talk to other pods in the kubernetes cluster.
+If there are two entities like frontend and backend and they want to communicate with each other then frontend pod can communicate with backend pod using the ip but the pods can be deleted and can be given new ip's so in that case we need the kubernetes services.
+so if we assign any service to any pod and if the pod fails and recreates with new ip still we can communicate with same pod using the service name.
+  

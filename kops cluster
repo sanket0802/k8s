@@ -1,0 +1,148 @@
+KOPS [Kubernetes Operations]
+============================
+
+Features of KOPS:-
+-----------------
+
+** It is an Automation method or Automatic provisioning of cluster.
+** It is used for automatic creation of vpc,subnets, sg,nat-gw, ig 
+** In built Autoscaling feature
+** It uses bastion host-ssh tunnel 
+** It requires Domain name and Hosted zone to access k8s API Server publicly
+** Also require s3 bucket to store k8s states (like logs,info,)
+
+ ============================
+Set up KOPS Cluster in AWS:-
+============================
+
+** Create ec2 instance
+-----------------------
+
+- Create an EC2 instance and connect it.
+
+
+-----------------------------------
+**Install AWS-CLI on EC2 Instance:-
+-----------------------------------
+
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+
+sudo apt install unzip
+
+unzip awscliv2.zip
+
+sudo ./aws/install
+
+aws --version
+
+ 
+--------------------------------------------------
+** Install Kubectl Binary with Curl on EC2 Instance:-
+--------------------------------------------------
+
+sudo curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+
+sudo chmod +x ./kubectl
+
+sudo mv ./kubectl /usr/local/bin/kubectl
+
+
+------------------------------
+** Install KOPS on EC2 Instance:-
+------------------------------
+
+sudo curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+
+sudo chmod +x kops-linux-amd64
+
+sudo mv kops-linux-amd64 /usr/local/bin/kops
+
+
+-------------------------------------------------------
+** Create hosted zones in route53 and create Nameservers:-
+-------------------------------------------------------
+ 
+Route53
+ 
+Create Hosted Zone
+ 
+Give cluster + Domain Name  <k8.onthecloud.ga>
+
+Save
+
+Select Domain name and copy its nameservers in Freenom nameserver 
+
+
+---------------------------------------------------
+** Create IAM USER WITH ec2,s3,route53, FULL ACCESS:-
+---------------------------------------------------
+
+IAM 
+ 
+Create user <kops>
+
+Attach policies VPC,S3,EC2,IAM,ROUTE53
+
+SAVE
+
+
+---------------------
+** Configure AWS-CLI:-
+---------------------
+
+aws configure 
+
+Enter access key:
+
+Enter secret-key:
+
+Default region:
+
+ -----------------------------------
+** Create s3 bucket using Command Line:-
+------------------------------------
+
+aws s3 mb s3://k8.onthecloud.ga
+
+aws s3api put-bucket-versioning --bucket k8.onthecloud.ga --versioning-configuration Status=Enabled
+
+export KOPS_STATE_STORE=s3://k8.onthecloud.ga
+
+
+-------------------
+** Create SSH keys :-
+--------------------
+
+ssh-keygen
+
+
+---------------------------------------
+** Setup Kubernetes on AWS using KOPS :-
+---------------------------------------
+
+kops create cluster --cloud=aws --zones=us-east-1a --name=k8.onthecloud.ga --dns-zone=k8.onthecloud.ga --dns public
+
+kops update cluster k8.onthecloud.ga--yes --admin
+
+kops validate cluster
+
+kubectl get nodes
+
+kubectl cluster-info
+
+
+------------------------------------
+** To delete Kubernetes KOPS cluster:
+-------------------------------------
+
+kops delete cluster k8.onthecloud.ga --yes
+
+
+-----------------------------------------
+** connecting to master nodes:-
+----------------------------------------
+
+ssh -i ~/.ssh/id_rsa ubuntu@api.k8.onthecloud.ga
+
+
+

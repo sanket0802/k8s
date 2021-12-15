@@ -1,0 +1,35 @@
+===========================================
+DEPLOYMENTS IN KUBERNETES USING YAML FILE :-
+===========================================
+
+
+create a .yml file (nginx)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # Define the Deployment Name
+  name: nginx-deployment
+  labels:
+    app: webserver
+spec:
+  # Define the Number of Pods
+  replicas: 4
+  # Define the Selector
+  selector:
+    matchLabels:
+      app: webserver
+  template:
+    metadata:
+      labels:
+        app: webserver
+    spec:
+      containers: # Container Details
+      - name: nginx
+        image: nginx:latest # Image
+        ports:
+:wq!
+
+kubectl create -f <filename>.yml
+kubectl get deployments
+ 

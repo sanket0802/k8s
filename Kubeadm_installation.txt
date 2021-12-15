@@ -1,0 +1,203 @@
+==========================
+KUBEADM INSTALLATION STEPS :--
+==========================
+
+-----------------------------------
+***Set Hostname On (Master & Node):
+-----------------------------------
+
+sudo hostnamectl set-hostname "k8s-master"     // Run this command on master node
+
+sudo hostnamectl set-hostname "k8s-node-0"     // Run this command on node-0
+
+sudo vi /etc/hosts
+
+    <master -ip addr>     <master-name>
+    <slave ip-addr>       <slave-name>
+  
+  
+===========================  
+INSTALL KUBERNETES SERVERS
+===========================
+
+sudo apt update
+
+sudo apt -y install curl apt-transport-https
+
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+
+echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+
+==========================
+INSTALL REQUIRED PACKAGES 
+==========================
+
+sudo apt update
+
+sudo apt -y install vim git curl wget kubelet kubeadm kubectl
+
+sudo apt-mark hold kubelet kubeadm kubectl
+
+kubectl version --client && kubeadm version
+
+
+=============
+DISABLE SWAP
+=============
+
+sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab 
+
+sudo swapoff -a
+
+
+=====================
+ENABLE KERNEL MODULES
+=====================
+
+sudo modprobe overlay
+
+sudo modprobe br_netfilter
+
+
+------------------------------
+***Add some settings to sysctl:-
+------------------------------
+
+sudo tee /etc/sysctl.d/kubernetes.conf<<EOF
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+EOF
+
+sudo sysctl --system
+
+
+=======================
+INSTALL DOCKER RUNTIME:
+=======================
+
+-----------------------------------
+***Add repo and Install packages:-
+-----------------------------------
+
+sudo apt update
+
+sudo apt install -y curl gnupg2 software-properties-common apt-transport-https ca-certificates
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+sudo apt update
+
+sudo apt install -y containerd.io docker-ce docker-ce-cli
+
+---------------------------------
+***Create required directories:-
+---------------------------------
+
+sudo mkdir -p /etc/systemd/system/docker.service.d
+
+-----------------------------------
+***Create daemon json config file:-
+-----------------------------------
+
+sudo tee /etc/docker/daemon.json <<EOF
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2"
+}
+EOF
+
+-------------------------------
+*** Start and enable Services:-
+-------------------------------
+
+sudo systemctl daemon-reload 
+
+sudo systemctl restart docker
+
+sudo systemctl enable docker
+
+
+
+========================================================================
+*********PERFORM THESE BELOW STEPS ONLY ON MASTER NODE*********
+=========================================================================
+
+
+=========================
+ INITIALIZE MASTER NODE :
+=========================
+
+lsmod | grep br_netfilter
+
+sudo systemctl enable kubelet
+
+sudo kubeadm config images pull
+
+sudo kubeadm init \
+  --pod-network-cidr=192.168.0.0/16
+       OR
+sudo kubeadm init                  
+
+
+-------------------------------------------------------------          ( after kubeadm init command you 
+mkdir -p $HOME/.kube                                       ||          will get these 3 commands execute 
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config   ||          them in master nodes.)
+sudo chown $(id -u):$(id -g) $HOME/.kube/config            ||
+---- --------------------------------------------------------
+
+
+=====================================
+ TOKEN  (PASTE IN SLAVE NODES)
+=====================================
+ 
+-----------------------------------------------------------------------------------------------------      (paste this token 
+sudo kubeadm join 192.168.1.40:6443 --token b4sfnc.53ifyuncy017cnqq --discovery-token-ca-cert-hash   ||    in slave nodes & 
+sha256:5078c5b151bf776c7d2395cdae08080faa6f82973b989d29caaa4d58c28d0e4e                              ||    execute.)
+------------------------------------------------------------------------------------------------------
+ 
+kubectl get nodes     
+ 
+----------------------------------------------------------------------------------   
+kubectl apply -f https://docs.projectcalico.org/v3.14/manifests/calico.yaml      ||         ( try any of these  
+ 			or                                                       ||         command if 1st didnt
+kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml  ||         work try 2nd
+kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml ||         for deployments.)
+----------------------------------------------------------------------------------
+ 
+ kubectl get nodes
+ 
+ kubectl get pods --all-namespaces
+ 
+ echo 'source <(kubectl completion bash)' >>~/.bashrc
+source .bashrc 
+ 
+ 
+==================================================
+ Check whether pod is able to connect to internet:
+==================================================
+
+https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/
+
+kubectl apply -f https://k8s.io/examples/admin/dns/dnsutils.yaml
+
+kubectl exec -it dnsutils -- sh
+
+nslookup kubernetes
+
+ping google.com
+
+kubectl exec -it dnsutils -- nslookup kubernetes
+
+kubectl exec -it dnsutils -- ping google.com
+
+
+
+clusterip, nodeport, load bal ,  deploy, replicaset, stateful   secrets, config map
